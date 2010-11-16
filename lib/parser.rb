@@ -435,16 +435,20 @@ class ReweItem
           #~ puts url
           owner_hash = {}
          name = res.parser.xpath("//tr[@class='SearchResults'][1]/td[2]/font").inner_html
-         site_address = res1.parser.xpath("//table[@class='WidgetBar']//tr[2]//table[2]//td[@class='DataletData']/font")[2].inner_html
-         apartment_no = res1.parser.xpath("//table[@class='WidgetBar']//tr[2]//table[2]//td[@class='DataletData']/font")[3].inner_html
+         
+         unless res1.parser.xpath("//table[@class='WidgetBar'][1]//tr[2]//table[2]").empty?
+           site_address = res1.parser.xpath("//table[@class='WidgetBar'][1]//tr[2]//table[2]//td[@class='DataletData']/font")[1].inner_html
+           apartment_no = res1.parser.xpath("//table[@class='WidgetBar'][1]//tr[2]//table[2]//td[@class='DataletData']/font")[2].inner_html
+           owner_hash.merge!({:site_address => site_address})
+           owner_hash.merge!({:apartment_no => apartment_no})
+         end
          
            res2 = res1.link_with(:text => 'Assessed Values').click
            owner_data =  res2.parser.xpath("//table[@class='WidgetBar']//tr[2]/td/table[2]//td[@class='DataletData']/font")
           #~ res2 =  agent.get(url)
           #~ name =    res2.parser.xpath("//table[@class='WidgetBar']//tr/td[@class='DataletHeaderBottom']")[1].inner_html
           owner_hash.merge!({:owner_name => name})
-          owner_hash.merge!({:site_address => site_address})
-          owner_hash.merge!({:apartment_no => apartment_no})
+          
           #~ parcel_data =  res2.parser.xpath("//table[@class='WidgetBar']//tr[2]/td/table[8]//td[@class='DataletData']/font")
           owner_hash.merge!({:tmk => owner_data[0].inner_html}) 
           owner_hash.merge!({:property_class => owner_data[1].inner_html})
