@@ -49,10 +49,12 @@ class ReweItem
       
     if link_data.include? '(TMK'
       tmk_index = data.index '(TMK'
-      tmk_number = data[(tmk_index + 2)..(tmk_index + 6)].join(' ')
+      tmk_number = data[(tmk_index + 2)..(tmk_index + 6)].join('')
+      # junk_index = tmk_number.index(/[^(0-9\-\(\)\ )]/)
+      tmk_number.gsub!(/[^(0-9\-\(\)\ )]/,"").chop!
       puts "TMK No -- #{tmk_number}"
       insert_hash.merge!({:tmk => tmk_number})
-      return if tmk_number.length < 10
+      #return if tmk_number.length < 10
     end
       
     insert_hash.merge!({:adtext => link_data,:lfname => 'Bryson', :docnumber => doc_no })
@@ -74,10 +76,12 @@ class ReweItem
          
     #get TMK No
     if link_data.include? 'TMK No:'
-      tmk_no = data[ data.index('TMK') + 2 ] + ' ' + data[ data.index('TMK') + 3 ]
+      tmk_no = data[ (data.index('TMK') + 2)..(data.index('Address:') - 2) ].join('')
+      junk_index = tmk_no.index(/[^(0-9\-\(\)\ )]/)
+      tmk_no = tmk_no.slice(0,junk_index) unless junk_index.nil?
       puts "TMK NO -- #{tmk_no}"
       insert_hash.merge!({:tmk => tmk_no})
-      return if tmk_no.length < 10
+      #return if tmk_no.length < 10
     end
          
     #get Property address
@@ -191,10 +195,19 @@ class ReweItem
     end
     if link_data.include? 'Tax Map Key Number'
       tmk_index = data.index 'Map'
-      tmk_no = data[(tmk_index+ 4)..(tmk_index+ 4)].join(' ')
+      tmk_no = data[(tmk_index+ 4)..(tmk_index+ 5)].join(' ')
+      junk_index = tmk_no.index(/[^(0-9\-\(\)\ )]/)
+      tmk_no = tmk_no.slice(0,junk_index) unless junk_index.nil?
       puts "tmk no -- #{tmk_no}"
       insert_hash.merge!({:tmk => tmk_no})
-      return if tmk_no.length < 10
+      #return if tmk_no.length < 10
+    elsif link_data.include? 'TMK'
+       tmk_index = data.index 'TMK' 
+       tmk_no = data[(tmk_index + 1)]
+       junk_index = tmk_no.index(/[^(0-9\-\(\)\ )]/)
+       tmk_no = tmk_no.slice(0,junk_index) unless junk_index.nil?
+       puts "tmk no -- #{tmk_no}"
+       insert_hash.merge!({:tmk => tmk_no})
     end
         
         
@@ -255,9 +268,11 @@ class ReweItem
       
     if link_data.include? 'TMK'
       tmk = data[ data.index('TMK') + 1]
+      junk_index = tmk.index(/[^(0-9\-\(\)\ )]/)
+      tmk = tmk.slice(0,junk_index) unless junk_index.nil?
       puts tmk
       insert_hash.merge!({:tmk => tmk})
-      return if tmk.length < 10
+      #return if tmk.length < 10
     end
        
     #get  auction date
@@ -314,9 +329,11 @@ class ReweItem
     #get tmk
     if link_data.include? 'TMK:'
       tmk_no = data[data.index('TMK:')+1]
+      junk_index = tmk_no.index(/[^(0-9\-\(\)\ )]/)
+      tmk_no = tmk_no.slice(0,junk_index) unless junk_index.nil?
       puts "tmk no -- #{tmk_no}"
       insert_hash.merge!({:tmk => tmk_no})
-      return if tmk_no.length < 10
+      #return if tmk_no.length < 10
     end
       
     #get association of apartment owners
@@ -350,10 +367,12 @@ class ReweItem
       
     if link_data.include? '(TMK'
       tmk_index = data.index '(TMK'
-      tmk_number = data[(tmk_index + 2)..(tmk_index + 6)].join(' ')
+      tmk_number = data[(tmk_index + 2)..(tmk_index + 3)].join(' ')
+      junk_index = tmk_number.index(/[^(0-9\-\(\)\ )]/)
+      tmk_number = tmk_number.slice(0,junk_index) unless junk_index.nil?
       puts "TMK No -- #{tmk_number}"
       insert_hash.merge!({:tmk => tmk_number})
-      return if tmk_number.length < 10
+      #return if tmk_number.length < 10
     end
     insert_hash.merge!({:adtext => link_data,:lfname => 'Johnson S. Chen', :docnumber => doc_no })
     Auction.create(insert_hash)
@@ -465,7 +484,7 @@ class ReweItem
       
 end
 
-ReweItem.truncate_tables(["auctions","rejects","owners"])
+
 
 
 
