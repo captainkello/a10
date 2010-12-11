@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20101025075938) do
+ActiveRecord::Schema.define(:version => 20101207130140) do
 
   create_table "auctions", :force => true do |t|
     t.date     "adate"
@@ -43,9 +43,63 @@ ActiveRecord::Schema.define(:version => 20101025075938) do
     t.datetime "updated_at"
   end
 
+  create_table "owners", :force => true do |t|
+    t.string   "tmk"
+    t.string   "owner_name"
+    t.text     "site_address"
+    t.string   "apartment_no"
+    t.string   "property_class"
+    t.string   "total_parcel_area"
+    t.string   "zoning"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string   "total_property_assessed_value"
+    t.string   "land_assessed_value"
+  end
+
   create_table "rejects", :force => true do |t|
     t.text     "adtext"
     t.integer  "doc_number"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "reports", :force => true do |t|
+    t.date     "adate"
+    t.string   "tmk"
+    t.string   "paddress1"
+    t.string   "paddress2"
+    t.string   "paddress3"
+    t.string   "pcity"
+    t.string   "pstate"
+    t.string   "pzip"
+    t.string   "punit"
+    t.string   "aoao"
+    t.string   "fs"
+    t.string   "caddress1"
+    t.string   "caddress2"
+    t.string   "ccity"
+    t.string   "island"
+    t.string   "judicial"
+    t.datetime "oh1date"
+    t.datetime "oh2date"
+    t.string   "ts"
+    t.string   "lfname"
+    t.string   "lfcontact"
+    t.string   "lfphone"
+    t.string   "lfemail"
+    t.string   "lender"
+    t.string   "docnumber"
+    t.text     "adtext"
+    t.string   "owner_name"
+    t.text     "site_address"
+    t.string   "apartment_no"
+    t.string   "property_class"
+    t.string   "total_parcel_area"
+    t.string   "zoning"
+    t.string   "total_property_assessed_value"
+    t.string   "owners"
+    t.string   "land_assessed_value"
     t.datetime "created_at"
     t.datetime "updated_at"
   end

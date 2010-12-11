@@ -10,7 +10,34 @@
 <br />
 
 <%= button_to 'Parse Ads', {:action => 'parse_ads'}, {:method => :get} %>
-<h2>Added Ads</h2>
+<h2>Report</h2>
+<table class="ads_table">
+<tr>
+  <th>Auction Date</th>
+  <th>Auction Address</th>
+  <th>Auction Unit</th>
+  <th>Assessed value land</th>
+  <th>Assessed value total</th>
+  <th>Owner</th>
+  <th>Tmk</th>
+  <th>Doc number</th>   
+</tr>
+<% @reports.each do |report| %>
+<tr>
+  <td><%= report.adate %></td>
+  <td><%= display_address(report) %></td>
+  <td><%= report.punit %></td>
+  <td><%= report.land_assessed_value %></td>
+  <td><%= report.total_property_assessed_value %></td>
+  <td><%= report.owner_name  %></td>
+  <td><%= report.tmk %></td>
+  <td><%= report.docnumber %></td>
+</tr>
+<% end %>
+</table>
+
+
+<p><h2>Added Ads</h2></p>
 <table class="ads_table">
 <tr>
   <th>Date</th>
@@ -19,34 +46,34 @@
   <th>TS</th>
   <th>Legal Firm</th>	
   <th>Property Address1</th>
-<th>Property Address2</th>
-<th>Property Address3</th>
-<th>Property State</th>
-<th>Property City</th>
-<th>Property Zip</th>
+  <th>Property Address2</th>
+  <th>Property Address3</th>
+  <th>Property State</th>
+  <th>Property City</th>
+  <th>Property Zip</th>
   <th>...</th>
-  <th>...</th>		
+  <th>...</th>	
 </tr>
 <% @auctions.each do |auction| %>
 <tr>
-<td><%= auction.adate %></td>
-<td><%= auction.tmk %></td>
-<td><%= auction.fs %></td>
-<td><%= auction.ts %></td>
-<td><%= auction.lfname  %></td>
-<td><%= auction.paddress1 %></td>
-<td><%= auction.paddress2 %></td>
-<td><%= auction.paddress3 %></td>
-<td><%= auction.pstate %></td>
-<td><%= auction.pcity %></td>
-<td><%= auction.pzip %></td>
-<td><%= link_to 'Edit', edit_auction_path(auction.id) %></td>
-<td><%= link_to 'Delete', auction_path(auction.id), :confirm => 'Are you sure?',:method => "delete"%></td>
+  <td><%= auction.adate %></td>
+  <td><%= auction.tmk %></td>
+  <td><%= auction.fs %></td>
+  <td><%= auction.ts %></td>
+  <td><%= auction.lfname  %></td>
+  <td><%= auction.paddress1 %></td>
+  <td><%= auction.paddress2 %></td>
+  <td><%= auction.paddress3 %></td>
+  <td><%= auction.pstate %></td>
+  <td><%= auction.pcity %></td>
+  <td><%= auction.pzip %></td>
+  <td><%= link_to 'Edit', edit_auction_path(auction.id) %></td>
+  <td><%= link_to 'Delete', auction_path(auction.id), :confirm => 'Are you sure?',:method => "delete"%></td>
 </tr>
 <% end %>
 </table>
 
-<p><h2>Rejected Ads</h2>
+<p><h2>Rejected Ads</h2></p>
 <table class="ads_table">
 <tr>
   <th>Ad Text</th>
@@ -63,7 +90,7 @@
 <% end %>
 </table>
 
-<p><h2>Owners</h2>
+<p><h2>Owners</h2></p>
 <table class="ads_table">
 <tr>
   <th>TMK</th>

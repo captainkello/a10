@@ -5,6 +5,27 @@ class ReweItem
     data = link_data.split(' ')
         
     insert_hash = {}
+    
+    if link_data.include? '(TMK'
+      tmk_index = data.index '(TMK'
+      tmk_number = data[(tmk_index + 2)..(tmk_index + 6)].join('')
+      # junk_index = tmk_number.index(/[^(0-9\-\(\)\ )]/)
+      tmk_number.gsub!(/[^(0-9\-\(\)\ )]/,"")
+      puts "TMK No -- #{tmk_number}"
+      tmk_number.gsub!(/[\(\)\-' ']/,"")
+      if tmk_number[0] != "1" and tmk_number[0] != 49
+          self.add_reject_data(link_data,doc_no)
+          return
+      end
+      if self.check_for_duplicate_tmk(tmk_number)
+          self.add_reject_data(link_data,doc_no)
+          return
+      end  
+      
+      insert_hash.merge!({:tmk => tmk_number})
+      #return if tmk_number.length < 10
+    end
+    
     #get association of apartment owners
     if link_data.include? 'Association of Apartment Owners of'
       aoaoindex = data.index('Owners')
@@ -47,19 +68,16 @@ class ReweItem
       insert_hash.merge!({:punit => unit_number})
     end
       
-    if link_data.include? '(TMK'
-      tmk_index = data.index '(TMK'
-      tmk_number = data[(tmk_index + 2)..(tmk_index + 6)].join('')
-      # junk_index = tmk_number.index(/[^(0-9\-\(\)\ )]/)
-      tmk_number.gsub!(/[^(0-9\-\(\)\ )]/,"").chop!
-      puts "TMK No -- #{tmk_number}"
-      insert_hash.merge!({:tmk => tmk_number})
-      #return if tmk_number.length < 10
-    end
+    
       
     insert_hash.merge!({:adtext => link_data,:lfname => 'Bryson', :docnumber => doc_no })
     Auction.create(insert_hash)
-    ReweItem.get_address_from_tmk(tmk_number) unless tmk_number.nil?
+    unless tmk_number.nil?
+      @owner_hash = ReweItem.get_address_from_tmk(tmk_number) 
+      @owner_hash.delete(:tmk)
+        insert_hash.merge!(@owner_hash)
+      end 
+      Report.create(insert_hash)
   end
 
   def self.parse_derek_format(link_data,doc_no)
@@ -67,6 +85,27 @@ class ReweItem
     data = link_data.split(' ')
     insert_hash = {}
         
+    #get TMK No
+    if link_data.include? 'TMK No:'
+      tmk_no = data[ (data.index('TMK') + 2)..(data.index('Address:') - 2) ].join('')
+      junk_index = tmk_no.index(/[^(0-9\-\(\)\ )]/)
+      tmk_no = tmk_no.slice(0,junk_index) unless junk_index.nil?
+      puts "TMK NO -- #{tmk_no}"
+      tmk_no.gsub!(/[\(\)\-' ']/,"")
+       if tmk_no[0] != "1" and tmk_no[0] != 49
+          self.add_reject_data(link_data,doc_no)
+          return
+        end
+        
+      if self.check_for_duplicate_tmk(tmk_no)
+          self.add_reject_data(link_data,doc_no)
+          return
+      end  
+      insert_hash.merge!({:tmk => tmk_no})
+      #return if tmk_no.length < 10
+    end
+
+
     #get TS No
     if link_data.include? 'TS No:'
       ts_no = data[ data.index('TS') + 2 ]
@@ -74,15 +113,7 @@ class ReweItem
       insert_hash.merge!({:ts => ts_no})
     end
          
-    #get TMK No
-    if link_data.include? 'TMK No:'
-      tmk_no = data[ (data.index('TMK') + 2)..(data.index('Address:') - 2) ].join('')
-      junk_index = tmk_no.index(/[^(0-9\-\(\)\ )]/)
-      tmk_no = tmk_no.slice(0,junk_index) unless junk_index.nil?
-      puts "TMK NO -- #{tmk_no}"
-      insert_hash.merge!({:tmk => tmk_no})
-      #return if tmk_no.length < 10
-    end
+    
          
     #get Property address
     if link_data.include? 'Property Address:'
@@ -102,13 +133,14 @@ class ReweItem
     if link_data.include? 'System document number'
       system_doc_no = data[ data.index('number') + 1 ]
       puts "System Document No -- #{system_doc_no}"
+      insert_hash.merge!({:docnumber => system_doc_no })
     end
         
     # get auction date
     if link_data.include? 'auction of the real property'
       auctionDate = data.index('auction')
       month = data[ (auctionDate + 10)..(auctionDate + 12)].join(' ')
-      day = data[ auctionDate + 11 ].chop!
+      day = data[ auctionDate + 11 ].chop
       year = data[ auctionDate + 12 ]
       puts "Auction Date -- #{month} #{day} #{year}"
       insert_hash.merge!({:adate => month })
@@ -124,9 +156,14 @@ class ReweItem
       insert_hash.merge!({:caddress1 => court_address1, :caddress2 => court_address2,:ccity => court_address3})
     end
         
-    insert_hash.merge!({:adtext => link_data,:lfname => 'Derek Wong', :docnumber => doc_no })
+    insert_hash.merge!({:adtext => link_data,:lfname => 'Derek Wong' })
     Auction.create(insert_hash)
-    ReweItem.get_address_from_tmk(tmk_no) unless tmk_no.nil?
+    unless tmk_no.nil?
+      @owner_hash = ReweItem.get_address_from_tmk(tmk_no) 
+      @owner_hash.delete(:tmk)
+        insert_hash.merge!(@owner_hash)
+      end 
+      Report.create(insert_hash)
   end
 
 
@@ -134,6 +171,42 @@ class ReweItem
   def self.parse_david_format(link_data,doc_no)
     data = link_data.split(' ')
     insert_hash = {}
+    
+     if link_data.include? 'Tax Map Key Number'
+      tmk_index = data.index 'Map'
+      tmk_no = data[(tmk_index+ 4)..(tmk_index+ 5)].join(' ')
+      junk_index = tmk_no.index(/[^(0-9\-\(\)\ )]/)
+      tmk_no = tmk_no.slice(0,junk_index) unless junk_index.nil?
+      puts "tmk no -- #{tmk_no}"
+      tmk_no = tmk_no.gsub(/[\(\)\-' ']/,"")
+       if tmk_no[0] != "1" and tmk_no[0] != 49
+          self.add_reject_data(link_data,doc_no)
+          return
+        end
+        if self.check_for_duplicate_tmk(tmk_no)
+          self.add_reject_data(link_data,doc_no)
+          return
+      end   
+        
+      insert_hash.merge!({:tmk => tmk_no})
+      #return if tmk_no.length < 10
+    elsif link_data.include? 'TMK'
+       tmk_index = data.index 'TMK' 
+       tmk_no = data[(tmk_index + 1)]
+       junk_index = tmk_no.index(/[^(0-9\-\(\)\ )]/)
+       tmk_no = tmk_no.slice(0,junk_index) unless junk_index.nil?
+       puts "tmk no -- #{tmk_no}"
+       tmk_no = tmk_no.gsub(/[\(\)\-' ']/,"")
+       if tmk_no[0] != "1" and tmk_no[0] != 49
+          self.add_reject_data(link_data,doc_no)
+          return
+      end
+      if self.check_for_duplicate_tmk(tmk_no)
+          self.add_reject_data(link_data,doc_no)
+          return
+      end 
+       insert_hash.merge!({:tmk => tmk_no})
+    end
        
     attorney_index = data.index 'David'
     attorney_email = data[ attorney_index + 7 ]
@@ -153,12 +226,13 @@ class ReweItem
       document_index = data.index 'No'
       document_number = data[ document_index + 1 ]
       puts "Document No -- #{document_number}"
+      insert_hash.merge!({:docnumber => document_number })
     end
        
     if link_data.include? 'public auction on'
       auctionDate = data.index('auction')
       month = data[ auctionDate + 2 ]
-      day = data[ auctionDate + 3 ].chop!
+      day = data[ auctionDate + 3 ].chop
       year = data[ auctionDate + 4 ]
       puts "Auction Date -- #{month} #{day} #{year}"
       auction_date = month+' '+day+' '+year
@@ -193,33 +267,44 @@ class ReweItem
       puts "fee simple #{fee_simple}"
       insert_hash.merge!({:fs => "Fee Simple"})
     end
-    if link_data.include? 'Tax Map Key Number'
-      tmk_index = data.index 'Map'
-      tmk_no = data[(tmk_index+ 4)..(tmk_index+ 5)].join(' ')
-      junk_index = tmk_no.index(/[^(0-9\-\(\)\ )]/)
-      tmk_no = tmk_no.slice(0,junk_index) unless junk_index.nil?
-      puts "tmk no -- #{tmk_no}"
-      insert_hash.merge!({:tmk => tmk_no})
-      #return if tmk_no.length < 10
-    elsif link_data.include? 'TMK'
-       tmk_index = data.index 'TMK' 
-       tmk_no = data[(tmk_index + 1)]
-       junk_index = tmk_no.index(/[^(0-9\-\(\)\ )]/)
-       tmk_no = tmk_no.slice(0,junk_index) unless junk_index.nil?
-       puts "tmk no -- #{tmk_no}"
-       insert_hash.merge!({:tmk => tmk_no})
-    end
+   
         
         
-    insert_hash.merge!({:adtext => link_data,:lfname => 'David B. Rosen', :docnumber => doc_no })
+    insert_hash.merge!({:adtext => link_data,:lfname => 'David B. Rosen' })
     Auction.create(insert_hash)
-    ReweItem.get_address_from_tmk(tmk_no) unless tmk_no.nil?
+
+    unless tmk_no.nil?
+      @owner_hash = ReweItem.get_address_from_tmk(tmk_no) 
+      @owner_hash.delete(:tmk)
+        insert_hash.merge!(@owner_hash)
+      end 
+      Report.create(insert_hash)
   end
 
   def self.parse_michael_format(link_data,doc_no)
     data = link_data.split(' ')
     insert_hash = {}
       
+    if link_data.include? 'TMK'
+      tmk = data[ data.index('TMK') + 1]
+      junk_index = tmk.index(/[^(0-9\-\(\)\ )]/)
+      tmk = tmk.slice(0,junk_index) unless junk_index.nil?
+      puts tmk
+      tmk.gsub!(/[\(\)\-' ']/,"")
+      if tmk[0] != "1" and tmk[0] != 49
+          self.add_reject_data(link_data,doc_no)
+          return
+        end
+        
+         if self.check_for_duplicate_tmk(tmk)
+          self.add_reject_data(link_data,doc_no)
+          return
+      end  
+      insert_hash.merge!({:tmk => tmk})
+       #return if tmk.length < 10
+    end
+
+
     #get Michael's address
     address_index = data.index 'Michael'
     lfcontact = data[(address_index+ 4)..(address_index+15)].join(' ')
@@ -235,9 +320,9 @@ class ReweItem
       fProperty = data.index('FORECLOSURE')
       puts data[ fProperty + 2 ]
       puts data[ fProperty + 3 ]
-      puts data[ fProperty + 4 ].chop!
+      puts data[ fProperty + 4 ].chop
       puts data[ fProperty + 5 ]
-      puts data[ fProperty + 7 ].chop!
+      puts data[ fProperty + 7 ].chop
       puts data[ fProperty + 8 ]
       puts data[ fProperty + 9 ]
       puts data[ fProperty + 10 ]
@@ -253,27 +338,20 @@ class ReweItem
       puts data[ fProperty + 20 ]
       puts data[ fProperty + 21 ]
       puts data[ fProperty + 22 ]
-      puts data[ fProperty + 23 ].chop!
+      puts data[ fProperty + 23 ].chop
       paddress1 =  data[ fProperty + 24 ]
       paddress2 =  data[ (fProperty + 25)..(fProperty + 26) ].join(' ')
       paddress3 =  data[ (fProperty + 27)..(fProperty + 28) ].join(' ')
-      puts data[ fProperty + 26 ].chop!
+      puts data[ fProperty + 26 ].chop
       puts data[ fProperty + 27 ]
-      puts data[ fProperty + 28 ].chop!
+      puts data[ fProperty + 28 ].chop
       pcity =  data[ fProperty + 29 ]
       pstate =  data[ fProperty + 30 ]
-      pzip =  data[ fProperty + 31 ].chop!
+      pzip =  data[ fProperty + 31 ].chop
       insert_hash.merge!({:paddress1 => paddress1, :paddress2 => paddress2,:paddress3 => paddress3, :pcity => pcity, :pstate => pstate, :pzip => pzip})
     end
       
-    if link_data.include? 'TMK'
-      tmk = data[ data.index('TMK') + 1]
-      junk_index = tmk.index(/[^(0-9\-\(\)\ )]/)
-      tmk = tmk.slice(0,junk_index) unless junk_index.nil?
-      puts tmk
-      insert_hash.merge!({:tmk => tmk})
-      #return if tmk.length < 10
-    end
+    
        
     #get  auction date
     if link_data.include? 'AUCTION DATE'
@@ -305,12 +383,38 @@ class ReweItem
       
     insert_hash.merge!({:adtext => link_data,:lfname => 'Michael R. Daniels', :docnumber => doc_no })
     Auction.create(insert_hash)
-    ReweItem.get_address_from_tmk(tmk) unless tmk.nil?
+
+    unless tmk.nil?
+      @owner_hash = ReweItem.get_address_from_tmk(tmk) 
+      @owner_hash.delete(:tmk)
+        insert_hash.merge!(@owner_hash)
+      end 
+      Report.create(insert_hash)
   end
 
   def self.parse_johnson_format(link_data,doc_no)
     data = link_data.split(' ')
     insert_hash = {}
+    
+    #get tmk
+    if link_data.include? 'TMK:'
+      tmk_no = data[data.index('TMK:')+1]
+      junk_index = tmk_no.index(/[^(0-9\-\(\)\ )]/)
+      tmk_no = tmk_no.slice(0,junk_index) unless junk_index.nil?
+      puts "tmk no -- #{tmk_no}"
+      tmk_no.gsub!(/[\(\)\-' ']/,"")
+     if tmk_no[0] != "1" and tmk_no[0] != 49
+          self.add_reject_data(link_data,doc_no)
+          return
+        end
+        
+         if self.check_for_duplicate_tmk(tmk_no)
+          self.add_reject_data(link_data,doc_no)
+          return
+      end  
+      insert_hash.merge!({:tmk => tmk_no})
+      #return if tmk_no.length < 10
+    end
          
     puts "Johnson S. Chen"
     #get address
@@ -325,16 +429,7 @@ class ReweItem
       civil_data = data[data.index('Civil') + 2]
       puts "civil #{civil_data}"
     end
-      
-    #get tmk
-    if link_data.include? 'TMK:'
-      tmk_no = data[data.index('TMK:')+1]
-      junk_index = tmk_no.index(/[^(0-9\-\(\)\ )]/)
-      tmk_no = tmk_no.slice(0,junk_index) unless junk_index.nil?
-      puts "tmk no -- #{tmk_no}"
-      insert_hash.merge!({:tmk => tmk_no})
-      #return if tmk_no.length < 10
-    end
+    
       
     #get association of apartment owners
     if link_data.include? 'Association of Apartment Owners of'
@@ -371,12 +466,28 @@ class ReweItem
       junk_index = tmk_number.index(/[^(0-9\-\(\)\ )]/)
       tmk_number = tmk_number.slice(0,junk_index) unless junk_index.nil?
       puts "TMK No -- #{tmk_number}"
+      tmk_number.gsub!(/[\(\)\-]/,"")
+      if tmk_number[0] != "1" and tmk_number[0] != 49
+          self.add_reject_data(link_data,doc_no)
+          return
+        end
+        
+         if self.check_for_duplicate_tmk(tmk_number)
+          self.add_reject_data(link_data,doc_no)
+          return
+      end  
       insert_hash.merge!({:tmk => tmk_number})
       #return if tmk_number.length < 10
     end
     insert_hash.merge!({:adtext => link_data,:lfname => 'Johnson S. Chen', :docnumber => doc_no })
     Auction.create(insert_hash)
-    ReweItem.get_address_from_tmk(tmk_number) unless tmk_number.nil?
+
+    unless tmk_number.nil?
+      @owner_hash = ReweItem.get_address_from_tmk(tmk_number) 
+      @owner_hash.delete(:tmk)
+        insert_hash.merge!(@owner_hash)
+      end 
+      Report.create(insert_hash)
       
   end
     
@@ -420,9 +531,9 @@ class ReweItem
     # Start mechanize
     agent = Mechanize.new
     agent.keep_alive = true
-      
+
     if tmk.length > 4
-      tmk = tmk.gsub!(/[\(\)\-' ']/,'')
+      tmk.gsub!(/[\(\)\-' ']/,'')
       tmk = tmk.slice(1,12)
       
       agent.get('http://honolulupropertytax.com/Search/GenericSearch.aspx?mode=PARID') do |page|
@@ -452,35 +563,40 @@ class ReweItem
           #~ end
         
           #~ puts url
-          owner_hash = {}
+          @owner_hash = {}
          name = res.parser.xpath("//tr[@class='SearchResults'][1]/td[2]/font").inner_html
          
          unless res1.parser.xpath("//table[@class='WidgetBar'][1]//tr[2]//table[2]").empty?
            site_address = res1.parser.xpath("//table[@class='WidgetBar'][1]//tr[2]//table[2]//td[@class='DataletData']/font")[1].inner_html
            apartment_no = res1.parser.xpath("//table[@class='WidgetBar'][1]//tr[2]//table[2]//td[@class='DataletData']/font")[2].inner_html
-           owner_hash.merge!({:site_address => site_address})
-           owner_hash.merge!({:apartment_no => apartment_no})
+           @owner_hash.merge!({:site_address => site_address})
+           @owner_hash.merge!({:apartment_no => apartment_no})
          end
          
            res2 = res1.link_with(:text => 'Assessed Values').click
            owner_data =  res2.parser.xpath("//table[@class='WidgetBar']//tr[2]/td/table[2]//td[@class='DataletData']/font")
           #~ res2 =  agent.get(url)
           #~ name =    res2.parser.xpath("//table[@class='WidgetBar']//tr/td[@class='DataletHeaderBottom']")[1].inner_html
-          owner_hash.merge!({:owner_name => name})
+          @owner_hash.merge!({:owner_name => name})
           
           #~ parcel_data =  res2.parser.xpath("//table[@class='WidgetBar']//tr[2]/td/table[8]//td[@class='DataletData']/font")
-          owner_hash.merge!({:tmk => owner_data[0].inner_html}) 
-          owner_hash.merge!({:property_class => owner_data[1].inner_html})
-          owner_hash.merge!({:total_property_assessed_value => owner_data[2].inner_html})
-          owner_hash.merge!({:land_assessed_value => owner_data[5].inner_html})
+         @owner_hash.merge!({:tmk => owner_data[0].inner_html}) 
+         @owner_hash.merge!({:property_class => owner_data[1].inner_html})
+         @owner_hash.merge!({:total_property_assessed_value => owner_data[2].inner_html})
+         @owner_hash.merge!({:land_assessed_value => owner_data[5].inner_html})
           
-          Owner.create(owner_hash)
+          Owner.create(@owner_hash)
+          
         end
       end
     end
+    return @owner_hash
   end
         
-        
+  def self.check_for_duplicate_tmk(tmk)
+      return true if Auction.find_by_tmk(tmk)
+      false  
+  end    
       
 end
 

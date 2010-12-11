@@ -1,7 +1,6 @@
-class CreateAuctions < ActiveRecord::Migration
+class CreateReports < ActiveRecord::Migration
   def self.up
-    create_table :auctions do |t|
-    
+    create_table :reports do |t|
       t.date :adate
       t.string :tmk
       t.string :paddress1
@@ -33,12 +32,22 @@ class CreateAuctions < ActiveRecord::Migration
       t.string :docnumber  # format tells us if it is Regular or Land Court
       
       t.text :adtext
+      
+      t.string :tmk
+      t.string :owner_name
+      t.text :site_address
+      t.string :apartment_no
+      t.string :property_class
+      t.string :total_parcel_area
+      t.string :zoning
+      t.string :total_property_assessed_value
+      t.string :owners, :land_assessed_value
 
       t.timestamps
     end
   end
 
   def self.down
-    drop_table :auctions
+    drop_table :reports
   end
 end

@@ -8,6 +8,7 @@ class AuctionsController < ApplicationController
     @auctions = Auction.all
     @rejects = Reject.all
     @owners = Owner.all
+    @reports = Report.all
     respond_to do |format|
       format.html # index.html.erb
       format.xml  { render :xml => @auctions }
@@ -108,7 +109,7 @@ class AuctionsController < ApplicationController
         end
       puts links.length
       @no_of_records = links.length
-      ReweItem.truncate_tables(["auctions","rejects","owners"])
+      ReweItem.truncate_tables(["auctions","rejects","owners","reports"])
       links.each_with_index do |link,index|
             if link.include?('Bryson')
               puts "---------parsing record no #{index+1}, lawyer name - Bryson--------------"
