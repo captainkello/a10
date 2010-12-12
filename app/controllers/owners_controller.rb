@@ -44,7 +44,7 @@ class OwnersController < ApplicationController
 
     respond_to do |format|
       if @owner.save
-        format.html { redirect_to(@owner, :notice => 'Owner was successfully created.') }
+        format.html { redirect_to(@owner, :notice => 'Created successfully.') }
         format.xml  { render :xml => @owner, :status => :created, :location => @owner }
       else
         format.html { render :action => "new" }
@@ -60,7 +60,7 @@ class OwnersController < ApplicationController
 
     respond_to do |format|
       if @owner.update_attributes(params[:owner])
-        format.html { redirect_to(@owner, :notice => 'Owner was successfully updated.') }
+        format.html { redirect_to(@owner, :notice => 'Successfully updated.') }
         format.xml  { head :ok }
       else
         format.html { render :action => "edit" }

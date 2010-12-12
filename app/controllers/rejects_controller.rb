@@ -6,13 +6,12 @@ class RejectsController < ApplicationController
     @reject = Reject.find(params[:id])
   end
   
-
   def edit
     @reject = Reject.find(params[:id])
   end
   
   def update
-    puts "asdfasdfasdfasdfasfasdfasdfasdfasdfasdfasdfa"
+    puts "asdf"
     @reject = Reject.find(params[:id])
      respond_to do |format|
       if @reject.update_attributes(params[:reject])

@@ -1,7 +1,9 @@
 class AuctionsController < ApplicationController
-	require 'nokogiri'
+
+  require 'nokogiri'
   require 'mechanize'
   require 'parser'
+  
   # GET /auctions
   # GET /auctions.xml
   def index
